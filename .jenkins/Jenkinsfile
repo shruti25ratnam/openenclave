@@ -153,7 +153,7 @@ def AArch64GNUTest(String version, String build_type) {
     }
 }
 
-def accK8sTest(String version, String compiler, String build_type) {
+def ACCContainerTest(String version, String compiler, String build_type) {
     node("${env.BUILD_TAG}-${version}") {
         container("oetools-${version}") {
             timeout(GLOBAL_TIMEOUT_MINUTES) {
@@ -321,7 +321,7 @@ def ACCHostVerificationTest(String version, String build_type) {
         /* Compile tests in SGX machine.  This will generate the necessary certs for the
         * host_verify test.
         */
-        stage("ACC-1804 Generate Quote") {
+        stage("Ubuntu 18.04 Generate Quote") {
             node("${env.BUILD_TAG}-bionic") {
                 container("oetools-bionic") {
                     timeout(GLOBAL_TIMEOUT_MINUTES) {
@@ -414,45 +414,46 @@ properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '90',
                                       numToKeepStr: '180')),
             [$class: 'JobRestrictionProperty']])
 
+
 try{
     oe.emailJobStatus('STARTED')
-    parallel "Check Developer Experience Ubuntu 16.04" :            { checkDevFlows('16.04') },
-            "Check Developer Experience Ubuntu 18.04" :            { checkDevFlows('18.04') },
-            "Check CI" :                                           { checkCI() },
-            "ACC1604 clang-7 Debug" :                              { ACCTest('ACC-1604', 'clang-7', 'Debug') },
-            "ACC1604 clang-7 Release" :                            { ACCTest('ACC-1604', 'clang-7', 'Release') },
-            "ACC1604 gcc Debug" :                                  { ACCTest('ACC-1604', 'gcc', 'Debug') },
-            "ACC1604 gcc Release" :                                { ACCTest('ACC-1604', 'gcc', 'Release') },
-            "ACC1604 Container RelWithDebInfo" :                   { ACCContainerTest('ACC-1604', '16.04') },
-            "ACC1604 Package RelWithDebInfo" :                     { ACCPackageTest('ACC-1604', '16.04') },
-            "ACC1804 clang-7 Debug" :                              { ACCTest('ACC-1804', 'clang-7', 'Debug') },
-            "ACC1804 clang-7 Release" :                            { ACCTest('ACC-1804', 'clang-7', 'Release') },
-            "ACC1804 gcc Debug" :                                  { ACCTest('ACC-1804', 'gcc', 'Debug') },
-            "ACC1804 gcc Release" :                                { ACCTest('ACC-1804', 'gcc', 'Release') },
-            "ACC1804 Container RelWithDebInfo" :                   { ACCContainerTest('ACC-1804', '18.04') },
-            "ACC1804 Package RelWithDebInfo" :                     { ACCPackageTest('ACC-1804', '18.04') },
+    checkCI()
+    parallel "Check Developer Experience Ubuntu 16.04" :           { checkDevFlows('xenial') },
+            "Check Developer Experience Ubuntu 18.04" :            { checkDevFlows('bionic') },
+            "ACC1604 clang-7 Debug" :                              { ACCTest('xenial', 'clang-7', 'Debug') },
+            "ACC1604 clang-7 Release" :                            { ACCTest('xenial', 'clang-7', 'Release') },
+            "ACC1604 gcc Debug" :                                  { ACCTest('xenial', 'gcc', 'Debug') },
+            "ACC1604 gcc Release" :                                { ACCTest('xenial', 'gcc', 'Release') },
+            "ACC1604 Container RelWithDebInfo" :                   { ubuntuTemplate('xenial') { ACCContainerTest('xenial', "clang-7", 'RelWithDebInfo') } },
+            "ACC1604 Package RelWithDebInfo" :                     { ubuntuTemplate('xenial') { ACCPackageTest('xenial') } },
+            "ACC1804 clang-7 Debug" :                              { ACCTest('bionic', 'clang-7', 'Debug') },
+            "ACC1804 clang-7 Release" :                            { ACCTest('bionic', 'clang-7', 'Release') },
+            "ACC1804 gcc Debug" :                                  { ACCTest('bionic', 'gcc', 'Debug') },
+            "ACC1804 gcc Release" :                                { ACCTest('bionic', 'gcc', 'Release') },
+            "ACC1804 Container RelWithDebInfo" :                   { ubuntuTemplate('bionic'){ ACCContainerTest('bionic', "clang-7", 'RelWithDebInfo') } },
+            "ACC1804 Package RelWithDebInfo" :                     { ubuntuTemplate('bionic') { ACCPackageTest('bionic') } },
             "ACC1804 GNU gcc SGX1FLC" :                            { ACCGNUTest() },
-            "AArch64 1604 GNU gcc Debug" :                         { AArch64GNUTest('16.04', 'Debug')},
-            "AArch64 1604 GNU gcc Release" :                       { AArch64GNUTest('16.04', 'Release')},
-            "AArch64 1804 GNU gcc Debug" :                         { AArch64GNUTest('18.04', 'Debug')},
-            "AArch64 1804 GNU gcc Release" :                       { AArch64GNUTest('18.04', 'Release')},
-            "Sim 1804 clang-7 SGX1 Debug" :                        { simulationTest('18.04', 'SGX1', 'Debug')},
-            "Sim 1804 clang-7 SGX1 Release" :                      { simulationTest('18.04', 'SGX1', 'Release')},
-            "Sim 1804 clang-7 SGX1-FLC Debug" :                    { simulationTest('18.04', 'SGX1FLC', 'Debug')},
-            "Sim 1804 clang-7 SGX1-FLC Release" :                  { simulationTest('18.04', 'SGX1FLC', 'Release')},
-            "Win2016 Ubuntu1604 clang-7 Debug Linux-Elf-build" :   { win2016LinuxElfBuild('16.04', 'clang-7', 'Debug') },
-            "Win2016 Ubuntu1604 clang-7 Release Linux-Elf-build" : { win2016LinuxElfBuild('16.04', 'clang-7', 'Release') },
-            "Win2016 Ubuntu1804 clang-7 Debug Linux-Elf-build" :   { win2016LinuxElfBuild('18.04', 'clang-7', 'Debug') },
-            "Win2016 Ubuntu1804 clang-7 Release Linux-Elf-build" : { win2016LinuxElfBuild('18.04', 'clang-7', 'Release') },
-            "Win2016 Ubuntu1804 gcc Debug Linux-Elf-build" :       { win2016LinuxElfBuild('18.04', 'gcc', 'Debug') },
+            "AArch64 1604 GNU gcc Debug" :                         { nonSGXUbuntuTemplate('xenial') { AArch64GNUTest('xenial', 'Debug') } },
+            "AArch64 1604 GNU gcc Release" :                       { nonSGXUbuntuTemplate('xenial') { AArch64GNUTest('xenial', 'Release') } },
+            "AArch64 1804 GNU gcc Debug" :                         { nonSGXUbuntuTemplate('bionic') { AArch64GNUTest('bionic', 'Debug') } },
+            "AArch64 1804 GNU gcc Release" :                       { nonSGXUbuntuTemplate('bionic') { AArch64GNUTest('bionic', 'Release') } },
+            "Sim 1804 clang-7 SGX1 Debug" :                        { nonSGXUbuntuTemplate("bionic") { simulationTest('bionic', 'SGX1', 'Debug') } },
+            "Sim 1804 clang-7 SGX1 Release" :                      { nonSGXUbuntuTemplate("bionic") { simulationTest('bionic', 'SGX1', 'Release') } },
+            "Sim 1804 clang-7 SGX1-FLC Debug" :                    { nonSGXUbuntuTemplate("bionic") { simulationTest('bionic', 'SGX1FLC', 'Debug') } },
+            "Sim 1804 clang-7 SGX1-FLC Release" :                  { nonSGXUbuntuTemplate("bionic") { simulationTest('bionic', 'SGX1FLC', 'Release') } },
+            "Win2016 Ubuntu1604 clang-7 Debug Linux-Elf-build" :   { ubuntuTemplate("xenial") { win2016LinuxElfBuild('xenial', 'clang-7', 'Debug') } },
+            "Win2016 Ubuntu1604 clang-7 Release Linux-Elf-build" : { ubuntuTemplate("xenial") { win2016LinuxElfBuild('xenial', 'clang-7', 'Release') } },
+            "Win2016 Ubuntu1804 clang-7 Debug Linux-Elf-build" :   { ubuntuTemplate("bionic") { win2016LinuxElfBuild('bionic', 'clang-7', 'Debug') } },
+            "Win2016 Ubuntu1804 clang-7 Release Linux-Elf-build" : { ubuntuTemplate("bionic") { win2016LinuxElfBuild('bionic', 'clang-7', 'Release') } },
+            "Win2016 Ubuntu1804 gcc Debug Linux-Elf-build" :       { ubuntuTemplate("bionic") { win2016LinuxElfBuild('bionic', 'gcc', 'Debug') } },
             "Win2016 Debug Cross Compile" :                        { win2016CrossCompile('Debug') },
             "Win2016 Release Cross Compile" :                      { win2016CrossCompile('Release') },
             "Win2016 Debug Cross Compile with DCAP libs" :         { win2016CrossCompile('Debug', 'ON') },
             "Win2016 Release Cross Compile with DCAP libs" :       { win2016CrossCompile('Release', 'ON') },
-            "Host verification 1604 Debug" :                       { ACCHostVerificationTest('16.04', 'Debug') },
-            "Host verification 1604 Release" :                     { ACCHostVerificationTest('16.04', 'Release') },
-            "Host verification 1804 Debug" :                       { ACCHostVerificationTest('18.04', 'Debug') },
-            "Host verification 1804 Release" :                     { ACCHostVerificationTest('18.04', 'Release') }
+            "Host verification 1604 Debug" :                       { ubuntuTemplate("xenial") { ACCHostVerificationTest('xenial', 'Debug') } } ,
+            "Host verification 1604 Release" :                     { ubuntuTemplate("xenial") { ACCHostVerificationTest('xenial', 'Release') } } ,
+            "Host verification 1804 Debug" :                       { ubuntuTemplate("bionic") { ACCHostVerificationTest('bionic', 'Debug') } } ,
+            "Host verification 1804 Release" :                     { ubuntuTemplate("bionic") { ACCHostVerificationTest('bionic', 'Release') } }
 } catch(Exception e) {
     println "Caught global pipeline exception :" + e
     GLOBAL_ERROR = e
